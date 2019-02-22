@@ -1,0 +1,41 @@
+﻿<Project>
+  <PropertyGroup>
+    <_FunctionsExtensionsTaskFramework Condition=" '$(MSBuildRuntimeType)' == 'Core'">netstandard2.0</_FunctionsExtensionsTaskFramework>
+    <_FunctionsExtensionsTaskFramework Condition=" '$(_FunctionsExtensionsTaskFramework)' == ''">net46</_FunctionsExtensionsTaskFramework>
+    <_FunctionsExtensionsTasksDir Condition=" '$(_FunctionsExtensionsTasksDir)'=='' ">$(MSBuildThisFileDirectory)..\tools\$(_FunctionsExtensionsTaskFramework)</_FunctionsExtensionsTasksDir>
+    <_FunctionsExtensionsTaskAssemblyFullPath Condition=" '$(_FunctionsExtensionsTaskAssemblyFullPath)'=='' ">$(_FunctionsExtensionsTasksDir)\Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator.dll</_FunctionsExtensionsTaskAssemblyFullPath>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <UsingTask TaskName="GenerateFunctionsExtensionsMetadata"
+             AssemblyFile="$(_FunctionsExtensionsTaskAssemblyFullPath)"/>
+
+  <Target Name="_GenerateFunctionsExtensionsMetadataPostBuild"
+          AfterTargets="Build">
+
+    <PropertyGroup>
+      <_IsFunctionsSdkBuild Condition="$(_FunctionsTaskFramework) != ''">true</_IsFunctionsSdkBuild>
+      <_FunctionsExtensionsDir>$(TargetDir)</_FunctionsExtensionsDir>
+      <_FunctionsExtensionsDir Condition="$(_IsFunctionsSdkBuild) == 'true'">$(_FunctionsExtensionsDir)bin</_FunctionsExtensionsDir>
+    </PropertyGroup>
+
+    <Message Importance="High" Text="Do it properly." />
+
+    <GenerateFunctionsExtensionsMetadata
+      SourcePath="$(_FunctionsExtensionsDir)"
+      OutputPath="$(_FunctionsExtensionsDir)"/>
+
+    <Move Condition="$(_IsFunctionsSdkBuild) == 'true' AND Exists('$(TargetDir)extensions.json')"
+          SourceFiles="$(TargetDir)extensions.json"
+          DestinationFiles="$(TargetDir)bin\extensions.json"
+          OverwriteReadOnlyFiles="true"
+          ContinueOnError="true"/>
+  </Target>
+
+  <Target Name="_GenerateFunctionsExtensionsMetadataPostPublish"
+          AfterTargets="Publish">
+    <GenerateFunctionsExtensionsMetadata
+          SourcePath="$(PublishDir)bin"
+          OutputPath="$(PublishDir)bin"/>
+  </Target>
+</Project>
